@@ -1,43 +1,38 @@
 # syntax = docker/dockerfile:latest
-FROM python:3.12.3-alpine3.19
-LABEL maintainer='github.com/borgmatic-collective'
-# VOLUME /mnt/source
-# VOLUME /mnt/borg-repository
-# VOLUME /root/.borgmatic
-# VOLUME /etc/borgmatic.d
-# VOLUME /root/.config/borg
-# VOLUME /root/.ssh
-# VOLUME /root/.cache/borg
-RUN apk add --update --no-cache \
-    bash \
-    bash-completion \
-    bash-doc \
-    ca-certificates \
-    curl \
-    findmnt \
-    fuse \
-    libacl \
-    logrotate \
-    lz4-libs \
-    mariadb-client \
-    mariadb-connector-c \
-    mongodb-tools \
-    postgresql-client \
-    sqlite \
-    sshfs \
-    supercronic \
-    tzdata \
-    msmtp \
-    && rm -rf \
-    /var/cache/apk/* \
-    /.cache
+
+FROM python:3.13.3-alpine3.21 
+
+RUN apk add --no-cache -U   \
+        bash                \
+        bash-completion     \
+        bash-doc            \
+        btrfs-progs         \
+        ca-certificates     \
+        curl                \
+        findmnt             \
+        fuse                \
+        acl-libs            \
+        libxxhash           \
+        logrotate           \
+        lz4-libs            \
+        mariadb-client      \
+        mariadb-connector-c \
+        mongodb-tools       \
+        openssl             \
+        postgresql-client   \
+        sshfs               \
+        sqlite              \
+        tzdata              \
+        xxhash              \
+        msmtp               \
+    && apk upgrade --no-cache
 
 COPY --chmod=755 entry.sh /entry.sh
 COPY requirements.txt /
-COPY Bengel+CA.crt /usr/local/share/ca-certificates/bengelca.crt
 
-RUN python3 -m pip install --no-cache -Ur requirements.txt
-RUN borgmatic --bash-completion > /usr/share/bash-completion/completions/borgmatic && echo "source /etc/bash/bash_completion.sh" > /root/.bashrc
+RUN python3 -m pip install -U pip \
+    && python3 -m pip install -Ur requirements.txt \
+    && apk add --no-cache -U borgmatic-bash-completion
 
 RUN mkdir /root/.ssh \
     && touch /root/.ssh/config \
@@ -45,4 +40,4 @@ RUN mkdir /root/.ssh \
     && ln -sf /usr/bin/msmtp /usr/sbin/sendmail \
     && update-ca-certificates
 
-ENTRYPOINT ["/entry.sh"]
+ENTRYPOINT [ "/entry.sh" ]
